@@ -1,7 +1,7 @@
 {
   "broker": {
     "name":"Default Local Broker",
-    "host":"127.0.0.1",
+    "host":"frp.xiaobodata.com",
     "port":1883,
     "security": {
       "type": "basic",

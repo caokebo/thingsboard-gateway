@@ -94,16 +94,18 @@ class CustomSerialConnector(Thread, Connector):    # Define a connector class, i
     def load_converters(self):    # Function for search a converter and save it.
         devices_config = self.__config.get('devices')
         try:
-            if devices_config is not None:
+            if devices_config:
                 for device_config in devices_config:
-                    if device_config.get('converter') is not None:
+                    if device_config.get('converter'):
                         converter = TBUtility.check_and_import(self.__connector_type, device_config['converter'])
                         self.devices[device_config['name']] = {'converter': converter(device_config),
                                                                'device_config': device_config}
                     else:
-                        log.error('Converter configuration for the custom connector %s -- not found, please check your configuration file.', self.get_name())
+                        log.error('Converter configuration for the custom connector %s -- not found, please check '
+                                  'your configuration file.', self.get_name())
             else:
-                log.error('Section "devices" in the configuration not found. A custom connector %s has being stopped.', self.get_name())
+                log.error('Section "devices" in the configuration not found. A custom connector %s has being stoppe'
+                          'd.', self.get_name())
                 self.close()
         except Exception as e:
             log.exception(e)

@@ -41,6 +41,7 @@ class MqttConnector(Connector, Thread):
         self.__attribute_updates = []
         self.__get_service_config(config)
         self.__sub_topics = {}
+        self.__connect_disconnect_topics = {}
         client_id = ''.join(random.choice(string.ascii_lowercase) for _ in range(23))
         self._client = Client(client_id)
         self.setName(config.get("name", self.__broker.get("name",
@@ -176,6 +177,10 @@ class MqttConnector(Connector, Thread):
                 for request in self.__service_config:
                     if self.__service_config.get(request) is not None:
                         for request_config in self.__service_config.get(request):
+                            regex_topic = TBUtility.topic_to_regex(request_config["topicFilter"])
+                            if self.__connect_disconnect_topics.get(request) is None:
+                                self.__connect_disconnect_topics[request] = []
+                            self.__connect_disconnect_topics[request].append(regex_topic)
                             self.__subscribe(request_config["topicFilter"])
             except Exception as e:
                 self.__log.error(e)
@@ -212,9 +217,17 @@ class MqttConnector(Connector, Thread):
                 self.__attribute_updates = config[service_config]
 
     def _on_message(self, client, userdata, message):
+        print("_on_message", message)
         self.statistics['MessagesReceived'] += 1
         content = TBUtility.decode(message)
+        print("self.__sub_topics=", self.__sub_topics, "message.topic=", message.topic)
+        print("self.__subscribe", self.__subscribe)
         regex_topic = [regex for regex in self.__sub_topics if fullmatch(regex, message.topic)]
+        regex_topic_connect = [regex for regex in self.__connect_disconnect_topics["connectRequests"] if fullmatch(regex, message.topic)]
+        regex_topic_disconnect = [regex for regex in self.__connect_disconnect_topics["disconnectRequests"] if fullmatch(regex, message.topic)]
+        print("regex_topic", regex_topic)
+        print("regex_topic_connect", regex_topic_connect)
+        print("regex_topic_disconnect", regex_topic_disconnect)
         if regex_topic:
             try:
                 for regex in regex_topic:
@@ -222,7 +235,10 @@ class MqttConnector(Connector, Thread):
                         for converter_value in range(len(self.__sub_topics.get(regex))):
                             if self.__sub_topics[regex][converter_value]:
                                 for converter in self.__sub_topics.get(regex)[converter_value]:
+                                    print("converter=", converter)
+                                    print("converter before content=%s topic=%s" % (content, message.topic))
                                     converted_content = converter.convert(message.topic, content)
+                                    print("converter after content=%s" % (converted_content,))
                                     if converted_content:
                                         try:
                                             self.__sub_topics[regex][converter_value][converter] = converted_content
@@ -238,8 +254,9 @@ class MqttConnector(Connector, Thread):
             except Exception as e:
                 log.exception(e)
                 return
-        elif self.__service_config.get("connectRequests"):
+        elif self.__service_config.get("connectRequests") and regex_topic_connect:
             connect_requests = [connect_request for connect_request in self.__service_config.get("connectRequests")]
+            print("connect_requests=", connect_requests)
             if connect_requests:
                 for request in connect_requests:
                     if request.get("topicFilter"):
@@ -250,10 +267,13 @@ class MqttConnector(Connector, Thread):
                                 founded_device_name = TBUtility.get_value(request["deviceNameJsonExpression"], content)
                             if request.get("deviceNameTopicExpression"):
                                 device_name_expression = request["deviceNameTopicExpression"]
-                                founded_device_name = search(device_name_expression, message.topic)
+                                founded_device_name = search(device_name_expression, message.topic).group()
+                            print("connectRequests founded_device_name=%s" % (founded_device_name,))
                             if founded_device_name is not None and founded_device_name not in self.__gateway.get_devices():
+                                print("connectRequests add_device founded_device_name=%s" % (founded_device_name,))
                                 self.__gateway.add_device(founded_device_name, {"connector": self})
                         else:
+                            self.__log.error(request)
                             self.__log.error("Cannot find connect request for device from message from topic: %s and with data: %s",
                                              message.topic,
                                              content)
@@ -262,7 +282,7 @@ class MqttConnector(Connector, Thread):
             else:
                 self.__log.error("Connection requests in config not found.")
 
-        elif self.__service_config.get("disconnectRequests") is not None:
+        elif self.__service_config.get("disconnectRequests") is not None and regex_topic_disconnect:
             disconnect_requests = [disconnect_request for disconnect_request in self.__service_config.get("disconnectRequests")]
             if disconnect_requests:
                 for request in disconnect_requests:
@@ -274,15 +294,17 @@ class MqttConnector(Connector, Thread):
                                 founded_device_name = TBUtility.get_value(request["deviceNameJsonExpression"], content)
                             if request.get("deviceNameTopicExpression"):
                                 device_name_expression = request["deviceNameTopicExpression"]
-                                founded_device_name = search(device_name_expression, message.topic)
+                                founded_device_name = search(device_name_expression, message.topic).group()
+                            print("disconnectRequests founded_device_name=%s" % (founded_device_name,))
                             if founded_device_name is not None and founded_device_name in self.__gateway.get_devices():
+                                print("disconnectRequests add_device founded_device_name=%s" % (founded_device_name,))
                                 self.__gateway.del_device(founded_device_name)
                         else:
-                            self.__log.error("Cannot find connect request for device from message from topic: %s and with data: %s",
+                            self.__log.error("Cannot find disconnect request for device from message from topic: %s and with data: %s",
                                       message.topic,
                                       content)
                     else:
-                        self.__log.error("\"topicFilter\" in connect requests config not found.")
+                        self.__log.error("\"topicFilter\" in disconnect requests config not found.")
             else:
                 self.__log.error("Disconnection requests in config not found.")
         elif message.topic in self.__gateway.rpc_requests_in_progress:

@@ -1,8 +1,8 @@
 thingsboard:
-  host: demo.thingsboard.io
+  host: things.xiaobodata.com
   port: 1883
   security:
-    accessToken: PUT_YOUR_GW_ACCESS_TOKEN_HERE
+    accessToken: WVFPaMlw9BIQZGy8CsfH
 storage:
   type: memory
   read_records_count: 100
@@ -13,12 +13,12 @@ storage:
 #  max_read_records_count: 10
 #  max_records_per_file: 10000
 connectors:
-
-  -
-    name: MQTT Broker Connector
-    type: mqtt
-    configuration: mqtt.json
-
+#
+#  -
+#    name: MQTT Broker Connector
+#    type: mqtt
+#    configuration: mqtt.json
+#
 #  -
 #    name: Modbus Connector
 #    type: modbus
@@ -44,3 +44,9 @@ connectors:
 #    type: serial
 #    configuration: custom_serial.json
 #    class: CustomSerialConnector
+
+  -
+    name: OPC-DA Connector
+    type: opcda
+    configuration: opcda.json
+    class: CustomOpcdaConnector

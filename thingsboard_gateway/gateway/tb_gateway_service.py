@@ -393,7 +393,7 @@ class TBGatewayService:
         log.debug(args)
         if content.get('device') is not None:
             try:
-                self.__connected_devices[content["device"]]["connector"].on_attributes_update(content)
+                self.__connected_devices[content["device"]]["connector"]. on_attributes_update(content)
             except Exception as e:
                 log.exception(e)
         else:
@@ -428,8 +428,10 @@ class TBGatewayService:
 
     def update_device(self, device_name, event, content):
         if event == 'connector' and self.__connected_devices[device_name].get(event) != content:
+            self.__connected_devices[device_name][event] = content
             self.__save_persistent_devices()
-        self.__connected_devices[device_name][event] = content
+        else:
+            self.__save_persistent_devices()
 
     def del_device(self, device_name):
         del self.__connected_devices[device_name]
@@ -469,6 +471,7 @@ class TBGatewayService:
             self.__connected_devices = {} if self.__connected_devices is None else self.__connected_devices
 
     def __save_persistent_devices(self):
+        print("__save_persistent_devices", self.__connected_devices)
         with open(self._config_dir + self.__connected_devices_file, 'w') as config_file:
             try:
                 data_to_save = {}

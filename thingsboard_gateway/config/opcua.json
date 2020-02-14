@@ -1,7 +1,7 @@
 {
   "server": {
     "name": "OPC-UA Default Server",
-    "url": "localhost:4840/freeopcua/server/",
+    "url": "localhost:48400/freeopcua/uamodeler/",
     "scanPeriodInMillis": 10000,
     "timeoutInMillis": 5000,
     "security": "Basic128Rsa15",
@@ -10,22 +10,22 @@
     },
     "mapping": [
       {
-        "deviceNodePattern": "MyObject\\d+",
-        "deviceNamePattern": "Device ${MyVariable22}",
+        "deviceNodePattern": "MyObject",
+        "deviceNamePattern": "MyObject ${MyVariable22}",
         "attributes": [
           {
             "key": "Tag1",
-            "path": "${MyVariable1}"
+            "path": "${hight}"
           }
         ],
         "timeseries": [
           {
             "key": "Tag3",
-            "path": "${Tag3}"
+            "path": "${speed}"
           },
           {
             "key": "Tag2",
-            "path": "${MyVariable3}"
+            "path": "${state}"
           }
         ],
         "rpc_methods": [
