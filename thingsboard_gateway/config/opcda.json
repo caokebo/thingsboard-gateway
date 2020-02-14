@@ -1,0 +1,35 @@
+{
+  "name": "OPC-DA connector",
+  "opcServerList": [
+    {
+      "serverId": 1,
+      "opcProxyIp": "127.0.0.1",
+      "opcProxyPort": 7766,
+      "opcServer": "Matrikon.OPC.Simulation",
+      "collectInterval": 1
+    }
+  ],
+  "devices": [
+    {
+      "serverId": 1,
+      "name": "Random",
+      "reportType": 1,
+      "attributes": [
+        {
+          "key": "Tag1",
+          "path": "Int1"
+        }
+      ],
+      "telemetry": [
+        {
+          "key": "Tag2",
+          "path": "Int2"
+        },
+        {
+          "key": "Tag3",
+          "path": "Int3"
+        }
+      ]
+    }
+  ]
+}
